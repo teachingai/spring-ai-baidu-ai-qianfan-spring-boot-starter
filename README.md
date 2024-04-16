@@ -1,18 +1,18 @@
-# spring-ai-erniebot-spring-boot-starter
+# spring-ai-qianfan-spring-boot-starter
 
-Spring Boot Starter For Spring AI Implementation Base On Baidu ERNIE Bot
+Spring Boot Starter For Spring AI Implementation Base On 百度千帆
 
 ### 说明
 
 
- > 基于 Baidu ERNIE Bot 和 Spring AI 的 Spring Boot Starter 实现
+ > 基于 百度千帆 和 Spring AI 的 Spring Boot Starter 实现
 
 ### Maven
 
 ``` xml
 <dependency>
 	<groupId>com.github.hiwepy</groupId>
-	<artifactId>spring-ai-erniebot-spring-boot-starter</artifactId>
+	<artifactId>spring-ai-qianfan-spring-boot-starter</artifactId>
 	<version>${project.version}</version>
 </dependency>
 ```

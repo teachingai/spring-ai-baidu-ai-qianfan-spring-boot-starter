@@ -389,6 +389,11 @@
 				<artifactId>spring-ai-retry</artifactId>
 				<version>${spring-ai.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>com.baidubce</groupId>
+				<artifactId>qianfan</artifactId>
+				<version>${qianfan.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -445,7 +450,6 @@
 		<dependency>
 			<groupId>com.baidubce</groupId>
 			<artifactId>qianfan</artifactId>
-			<version>${qianfan.version}</version>
 		</dependency>
 
 	</dependencies>

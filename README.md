@@ -7,6 +7,8 @@ Spring Boot Starter For Spring AI Implementation Base On 百度千帆
 
  > 基于 百度千帆 和 Spring AI 的 Spring Boot Starter 实现
 
+- 百度千帆大模型平台 Java SDK：https://github.com/baidubce/bce-qianfan-sdk/tree/main/java
+
 ### Maven
 
 ``` xml

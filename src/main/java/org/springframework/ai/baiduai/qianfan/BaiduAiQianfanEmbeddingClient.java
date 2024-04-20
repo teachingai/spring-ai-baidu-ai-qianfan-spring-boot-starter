@@ -1,4 +1,4 @@
-package org.springframework.ai.qianfan;
+package org.springframework.ai.baiduai.qianfan;
 
 import com.baidubce.qianfan.Qianfan;
 import com.baidubce.qianfan.model.embedding.EmbeddingData;
@@ -16,11 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class QianfanAiEmbeddingClient extends AbstractEmbeddingClient {
+public class BaiduAiQianfanEmbeddingClient extends AbstractEmbeddingClient {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final QianfanAiEmbeddingOptions defaultOptions;
+    private final BaiduAiQianfanEmbeddingOptions defaultOptions;
 
     private final MetadataMode metadataMode;
 
@@ -29,15 +29,15 @@ public class QianfanAiEmbeddingClient extends AbstractEmbeddingClient {
      */
     private final Qianfan qianfan;
 
-    public QianfanAiEmbeddingClient(Qianfan qianfan) {
+    public BaiduAiQianfanEmbeddingClient(Qianfan qianfan) {
         this(qianfan, MetadataMode.EMBED);
     }
 
-    public QianfanAiEmbeddingClient(Qianfan qianfan, MetadataMode metadataMode) {
-        this(qianfan, metadataMode, QianfanAiEmbeddingOptions.builder().build());
+    public BaiduAiQianfanEmbeddingClient(Qianfan qianfan, MetadataMode metadataMode) {
+        this(qianfan, metadataMode, BaiduAiQianfanEmbeddingOptions.builder().build());
     }
 
-    public QianfanAiEmbeddingClient(Qianfan qianfan, MetadataMode metadataMode, QianfanAiEmbeddingOptions options) {
+    public BaiduAiQianfanEmbeddingClient(Qianfan qianfan, MetadataMode metadataMode, BaiduAiQianfanEmbeddingOptions options) {
         Assert.notNull(qianfan, "Qianfan must not be null");
         Assert.notNull(metadataMode, "metadataMode must not be null");
         Assert.notNull(options, "options must not be null");
@@ -57,7 +57,6 @@ public class QianfanAiEmbeddingClient extends AbstractEmbeddingClient {
 
     @Override
     public EmbeddingResponse call(EmbeddingRequest request) {
-
         logger.debug("Retrieving embeddings");
 
         com.baidubce.qianfan.model.embedding.EmbeddingRequest embeddingRequest = this.toEmbeddingRequest(request);
@@ -105,7 +104,7 @@ public class QianfanAiEmbeddingClient extends AbstractEmbeddingClient {
 
     private EmbeddingResponseMetadata generateMetadata(String model, EmbeddingUsage embeddingsUsage) {
         EmbeddingResponseMetadata metadata = new EmbeddingResponseMetadata();
-        // metadata.put("model", model);
+        metadata.put("model", model);
         metadata.put("prompt-tokens", embeddingsUsage.getPromptTokens());
         metadata.put("total-tokens", embeddingsUsage.getTotalTokens());
         return metadata;

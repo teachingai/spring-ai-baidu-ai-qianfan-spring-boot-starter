@@ -1,2 +1,2 @@
 org.springframework.aot.hint.RuntimeHintsRegistrar=\
-	org.springframework.ai.qianfan.aot.QianfanAiRuntimeHints
+	aot.org.springframework.ai.baiduai.qianfan.BaiduAiQianfanRuntimeHints

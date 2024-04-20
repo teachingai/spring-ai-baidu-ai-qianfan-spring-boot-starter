@@ -1,4 +1,4 @@
-package org.springframework.ai.qianfan;
+package org.springframework.ai.baiduai.qianfan;
 
 import com.baidubce.qianfan.model.chat.Function;
 import com.baidubce.qianfan.model.chat.ToolChoice;
@@ -19,9 +19,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions {
+public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOptions {
 
-    public static final Double DEFAULT_TEMPERATURE = 0.95D;
+    public static final Float DEFAULT_TEMPERATURE = 0.95F;
 
     /**
      * 所要调用的模型编码
@@ -36,7 +36,7 @@ public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions
      * 较高的数值会使输出更加随机，而较低的数值会使其更加集中和确定，范围 (0, 1.0]，不能为0
      */
     @JsonProperty("temperature")
-    private Double temperature = DEFAULT_TEMPERATURE;
+    private Float temperature = DEFAULT_TEMPERATURE;
 
     /**
      * 用温度取样的另一种方法，称为核取样取值范围是：(0.0, 1.0) 开区间，不能等于 0 或 1，默认值为 0.7
@@ -45,13 +45,13 @@ public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions
      * 建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数
      */
     @JsonProperty("top_p")
-    private Double topP;
+    private Float topP;
 
     /**
      * 通过对已生成的token增加惩罚，减少重复生成的现象。说明：值越大表示惩罚越大，取值范围：[1.0, 2.0]
      */
     @JsonProperty(value = "penaltyScore")
-    private Double penaltyScore;
+    private Float penaltyScore;
 
     /**
      * 模型人设，主要用于人设设定
@@ -133,7 +133,7 @@ public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions
 
     public static class Builder {
 
-        private final QianfanAiChatOptions options = new QianfanAiChatOptions();
+        private final BaiduAiQianfanChatOptions options = new BaiduAiQianfanChatOptions();
 
         public Builder withModel(String model) {
             this.options.setModel(model);
@@ -165,7 +165,7 @@ public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions
             return this;
         }
 
-        public QianfanAiChatOptions build() {
+        public BaiduAiQianfanChatOptions build() {
             return this.options;
         }
 
@@ -177,14 +177,6 @@ public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions
 
     public void setMaxTokens(Integer maxTokens) {
         this.maxTokens = maxTokens;
-    }
-
-    public Boolean getDoSample() {
-        return doSample;
-    }
-
-    public void setDoSample(Boolean doSample) {
-        this.doSample = doSample;
     }
 
     public String getUser() {
@@ -241,7 +233,7 @@ public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions
     }
 
     /**
-     * Convert the {@link QianfanAiChatOptions} object to a {@link Map} of key/value pairs.
+     * Convert the {@link BaiduAiQianfanChatOptions} object to a {@link Map} of key/value pairs.
      * @return The {@link Map} of key/value pairs.
      */
     public Map<String, Object> toMap() {
@@ -253,14 +245,6 @@ public class QianfanAiChatOptions implements FunctionCallingOptions, ChatOptions
         catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Helper factory method to create a new {@link QianfanAiChatOptions} instance.
-     * @return A new {@link QianfanAiChatOptions} instance.
-     */
-    public static QianfanAiChatOptions create() {
-        return new QianfanAiChatOptions();
     }
 
     /**

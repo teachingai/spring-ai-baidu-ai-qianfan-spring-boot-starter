@@ -1,4 +1,4 @@
-package org.springframework.ai.qianfan.autoconfigure;
+package org.springframework.ai.baiduai.qianfan.autoconfigure;
 
 import com.baidubce.qianfan.core.auth.Auth;
 import com.baidubce.qianfan.model.RateLimitConfig;

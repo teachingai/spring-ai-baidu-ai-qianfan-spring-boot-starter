@@ -1,6 +1,6 @@
-package org.springframework.ai.qianfan.autoconfigure;
+package org.springframework.ai.baiduai.qianfan.autoconfigure;
 
-import org.springframework.ai.qianfan.QianfanAiChatOptions;
+import org.springframework.ai.baiduai.qianfan.BaiduAiQianfanChatOptions;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
@@ -26,17 +26,17 @@ public class QianfanAiChatProperties {
      * generative's defaults.
      */
     @NestedConfigurationProperty
-    private QianfanAiChatOptions options = QianfanAiChatOptions.builder()
+    private BaiduAiQianfanChatOptions options = BaiduAiQianfanChatOptions.builder()
             .withModel(DEFAULT_CHAT_MODEL)
             .withTemperature(DEFAULT_TEMPERATURE)
             .withTopP(DEFAULT_TOP_P)
             .build();
 
-    public QianfanAiChatOptions getOptions() {
+    public BaiduAiQianfanChatOptions getOptions() {
         return this.options;
     }
 
-    public void setOptions(QianfanAiChatOptions options) {
+    public void setOptions(BaiduAiQianfanChatOptions options) {
         this.options = options;
     }
 

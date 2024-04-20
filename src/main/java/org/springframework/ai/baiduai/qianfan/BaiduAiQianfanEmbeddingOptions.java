@@ -1,4 +1,4 @@
-package org.springframework.ai.qianfan;
+package org.springframework.ai.baiduai.qianfan;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -8,10 +8,10 @@ import org.springframework.ai.embedding.EmbeddingOptions;
 
 import java.util.Map;
 
-public class QianfanAiEmbeddingOptions implements EmbeddingOptions {
+public class BaiduAiQianfanEmbeddingOptions implements EmbeddingOptions {
 
     /**
-     * NOTE: Synthetic field not part of the official ZhiPuAi API.
+     * NOTE: Synthetic field not part of the official QianfanAi API.
      * Used to allow overriding the model name with prompt options.
      */
     @JsonProperty("model")
@@ -32,10 +32,10 @@ public class QianfanAiEmbeddingOptions implements EmbeddingOptions {
 
     public static class Builder {
 
-        protected QianfanAiEmbeddingOptions options;
+        protected BaiduAiQianfanEmbeddingOptions options;
 
         public Builder() {
-            this.options = new QianfanAiEmbeddingOptions();
+            this.options = new BaiduAiQianfanEmbeddingOptions();
         }
 
         public Builder withModel(String model) {
@@ -43,14 +43,14 @@ public class QianfanAiEmbeddingOptions implements EmbeddingOptions {
             return this;
         }
 
-        public QianfanAiEmbeddingOptions build() {
+        public BaiduAiQianfanEmbeddingOptions build() {
             return this.options;
         }
 
     }
 
     /**
-     * Convert the {@link QianfanAiEmbeddingOptions} object to a {@link Map} of key/value pairs.
+     * Convert the {@link BaiduAiQianfanEmbeddingOptions} object to a {@link Map} of key/value pairs.
      * @return The {@link Map} of key/value pairs.
      */
     public Map<String, Object> toMap() {

@@ -1,8 +1,9 @@
-package org.springframework.ai.qianfan;
+package org.springframework.ai.baiduai.qianfan;
 
 import com.baidubce.qianfan.Qianfan;
 import com.baidubce.qianfan.model.chat.ChatRequest;
 import com.baidubce.qianfan.model.chat.Function;
+import com.baidubce.qianfan.model.chat.FunctionCall;
 import com.baidubce.qianfan.model.chat.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,7 @@ import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.StreamingChatClient;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
+import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.ModelOptionsUtils;
@@ -24,33 +26,33 @@ import reactor.core.publisher.Flux;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class QianfanAiChatClient
-        extends AbstractFunctionCallSupport<Message, ChatRequest, ResponseEntity<ChatResponse>>
+public class BaiduAiQianfanChatClient
+        extends AbstractFunctionCallSupport<Message, ChatRequest, ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse>>
         implements ChatClient, StreamingChatClient {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     /**
      * Default options to be used for all chat requests.
      */
-    private QianfanAiChatOptions defaultOptions;
+    private BaiduAiQianfanChatOptions defaultOptions;
     /**
      * Low-level 智普 API library.
      */
     private final Qianfan qianfan;
 
-    public QianfanAiChatClient(Qianfan qianfan) {
-        this(qianfan, QianfanAiChatOptions.builder()
+    public BaiduAiQianfanChatClient(Qianfan qianfan) {
+        this(qianfan, BaiduAiQianfanChatOptions.builder()
                         .withTemperature(0.95f)
                         .withTopP(0.7f)
-                        //.withModel(ZhipuAiApi.ChatModel.GLM_3_TURBO.getValue())
+                        //.withModel(QianfanAiApi.ChatModel.GLM_3_TURBO.getValue())
                         .build());
     }
 
-    public QianfanAiChatClient(Qianfan qianfan, QianfanAiChatOptions options) {
+    public BaiduAiQianfanChatClient(Qianfan qianfan, BaiduAiQianfanChatOptions options) {
         this(qianfan, options, null);
     }
 
-    public QianfanAiChatClient(Qianfan qianfan, QianfanAiChatOptions options, FunctionCallbackContext functionCallbackContext) {
+    public BaiduAiQianfanChatClient(Qianfan qianfan, BaiduAiQianfanChatOptions options, FunctionCallbackContext functionCallbackContext) {
         super(functionCallbackContext);
         Assert.notNull(qianfan, "Qianfan must not be null");
         Assert.notNull(options, "Options must not be null");
@@ -61,37 +63,33 @@ public class QianfanAiChatClient
     @Override
     public ChatResponse call(Prompt prompt) {
 
+        Assert.notEmpty(prompt.getInstructions(), "At least one text is required!");
+
         var request = createRequest(prompt, false);
 
-        return retryTemplate.execute(ctx -> {
+        ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse> completionEntity = this.callWithFunctionSupport(request);
 
-            ResponseEntity<ChatResponse> completionEntity = this.callWithFunctionSupport(request);
+        var chatCompletion = completionEntity.getBody();
+        if (chatCompletion == null) {
+            log.warn("No chat completion returned for prompt: {}", prompt);
+            return new ChatResponse(List.of());
+        }
 
-            var chatCompletion = completionEntity.getBody();
-            if (chatCompletion == null) {
-                log.warn("No chat completion returned for prompt: {}", prompt);
-                return new ChatResponse(List.of());
-            }
+        new Generation(chatCompletion.getResult(), toMap(chatCompletion.getId(), chatCompletion))
+                .withGenerationMetadata(ChatGenerationMetadata.from(chatCompletion.getFinishReason(), null));
 
-            List<Generation> generations = chatCompletion.choices()
-                    .stream()
-                    .map(choice -> new Generation(choice.message().content(), toMap(chatCompletion.id(), choice))
-                            .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null)))
-                    .toList();
-
-            return new ChatResponse(generations);
-        });
+        List<Generation> generations = chatCompletion.choices()
+                .stream()
+                .map(choice ->)
+                .toList();
+        ChatResponseMetadata metadata = ChatResponseMetadata.from(chatCompletion.getFinishReason(), null);
+        return new ChatResponse(generations);
     }
 
-    private Map<String, Object> toMap(String id, ChatResponse.Choice choice) {
+    private Map<String, Object> toMap(String id, com.baidubce.qianfan.model.chat.ChatResponse response) {
         Map<String, Object> map = new HashMap<>();
-
-        var message = choice.message();
-        if (message.role() != null) {
-            map.put("role", message.role().name());
-        }
-        if (choice.finishReason() != null) {
-            map.put("finishReason", choice.finishReason().name());
+        if (response.getFinishReason() != null) {
+            map.put("finishReason", response.getFinishReason());
         }
         map.put("id", id);
         return map;
@@ -99,49 +97,52 @@ public class QianfanAiChatClient
 
     @Override
     public Flux<ChatResponse> stream(Prompt prompt) {
+
+        Assert.notEmpty(prompt.getInstructions(), "At least one text is required!");
+
         var request = createRequest(prompt, true);
 
-        return retryTemplate.execute(ctx -> {
+        var completionChunks = this.qianfan.chatCompletionStream(request);
 
-            var completionChunks = this.zhipuAiApi.chatCompletionStream(request);
+        // For chunked responses, only the first chunk contains the choice role.
+        // The rest of the chunks with same ID share the same role.
+        ConcurrentHashMap<String, String> roleMap = new ConcurrentHashMap<>();
 
-            // For chunked responses, only the first chunk contains the choice role.
-            // The rest of the chunks with same ID share the same role.
-            ConcurrentHashMap<String, String> roleMap = new ConcurrentHashMap<>();
+        return completionChunks.map(chunk -> toChatCompletion(chunk)).map(chatCompletion -> {
 
-            return completionChunks.map(chunk -> toChatCompletion(chunk)).map(chatCompletion -> {
+            chatCompletion = handleFunctionCallOrReturn(request, ResponseEntity.of(Optional.of(chatCompletion)))
+                    .getBody();
 
-                chatCompletion = handleFunctionCallOrReturn(request, ResponseEntity.of(Optional.of(chatCompletion)))
-                        .getBody();
+            @SuppressWarnings("null")
+            String id = chatCompletion.id();
 
-                @SuppressWarnings("null")
-                String id = chatCompletion.id();
-
-                List<Generation> generations = chatCompletion.choices().stream().map(choice -> {
-                    if (choice.message().role() != null) {
-                        roleMap.putIfAbsent(id, choice.message().role().name());
-                    }
-                    String finish = (choice.finishReason() != null ? choice.finishReason().name() : "");
-                    var generation = new Generation(choice.message().content(),
-                            Map.of("id", id, "role", roleMap.get(id), "finishReason", finish));
-                    if (choice.finishReason() != null) {
-                        generation = generation
-                                .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null));
-                    }
-                    return generation;
-                }).toList();
-                return new ChatResponse(generations);
-            });
+            List<Generation> generations = chatCompletion.choices().stream().map(choice -> {
+                if (choice.message().role() != null) {
+                    roleMap.putIfAbsent(id, choice.message().role().name());
+                }
+                String finish = (choice.finishReason() != null ? choice.finishReason().name() : "");
+                var generation = new Generation(choice.message().content(),
+                        Map.of("id", id, "role", roleMap.get(id), "finishReason", finish));
+                if (choice.finishReason() != null) {
+                    generation = generation
+                            .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null));
+                }
+                return generation;
+            }).toList();
+            return new ChatResponse(generations);
         });
     }
 
-    private ChatResponse toChatCompletion(ChatResponseChunk chunk) {
-        List<ChatResponse.Choice> choices = chunk.choices()
+    private ChatResponse toChatCompletion(com.baidubce.qianfan.model.chat.ChatResponse response) {
+        List<com.baidubce.qianfan.model.chat.ChatResponse.Choice> choices = chunk.choices()
                 .stream()
                 .map(cc -> new ChatResponse.Choice(cc.index(), cc.delta(), cc.finishReason()))
                 .toList();
 
-        return new ChatResponse(chunk.id(), "chat.completion", chunk.created(), chunk.model(), choices, null);
+        new Generation(response.getResult(), toMap(response))
+                .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null)
+
+        return new ChatResponse(response.getSentenceId(), "chat.completion", response.getBanRound(), chunk.model(), choices, null);
     }
 
     /**
@@ -153,11 +154,15 @@ public class QianfanAiChatClient
 
         var chatCompletionMessages = prompt.getInstructions()
                 .stream()
-                .map(m -> new Message(m.getContent(),
+                .map(m -> new Message().setContent(m.getContent()).setRole(),
                         Message.Role.valueOf(m.getMessageType().name())))
                 .toList();
 
-        var request = new ChatRequest(null, chatCompletionMessages, stream);
+        qianfan.chatCompletion()
+
+        var request = new ChatRequest();
+        request.setStream(stream);
+        request.setMessages(chatCompletionMessages);
 
         if (this.defaultOptions != null) {
             Set<String> defaultEnabledFunctions = this.handleFunctionCallbackConfigurations(this.defaultOptions,
@@ -171,7 +176,7 @@ public class QianfanAiChatClient
         if (prompt.getOptions() != null) {
             if (prompt.getOptions() instanceof ChatOptions runtimeOptions) {
                 var updatedRuntimeOptions = ModelOptionsUtils.copyToTarget(runtimeOptions, ChatOptions.class,
-                        QianfanAiChatOptions.class);
+                        BaiduAiQianfanChatOptions.class);
 
                 Set<String> promptEnabledFunctions = this.handleFunctionCallbackConfigurations(updatedRuntimeOptions,
                         IS_RUNTIME_CALL);
@@ -190,7 +195,7 @@ public class QianfanAiChatClient
         if (!CollectionUtils.isEmpty(functionsForThisRequest)) {
 
             request = ModelOptionsUtils.merge(
-                    QianfanAiChatOptions.builder().withTools(this.getFunctionTools(functionsForThisRequest)).build(),
+                    BaiduAiQianfanChatOptions.builder().withTools(this.getFunctionTools(functionsForThisRequest)).build(),
                     request, ChatRequest.class);
         }
 
@@ -199,9 +204,9 @@ public class QianfanAiChatClient
 
     private List<Function> getFunctionTools(Set<String> functionNames) {
         return this.resolveFunctionCallbacks(functionNames).stream().map(functionCallback -> {
-            var function = new ZhipuAiApi.FunctionTool.Function(functionCallback.getDescription(),
+            var function = new FunctionCall(functionCallback.getDescription(),
                     functionCallback.getName(), functionCallback.getInputTypeSchema());
-            return new ZhipuAiApi.FunctionTool(function);
+            return new Function(function);
         }).toList();
     }
 
@@ -215,7 +220,7 @@ public class QianfanAiChatClient
 
         // Every tool-call item requires a separate function call and a response (TOOL)
         // message.
-        for (Message.ToolCall toolCall : responseMessage.toolCalls()) {
+        for (Message.ToolCall toolCall : responseMessage.getFunctionCall()) {
 
             var functionName = toolCall.function().name();
             String functionArguments = toolCall.function().arguments();
@@ -246,22 +251,22 @@ public class QianfanAiChatClient
 
     @SuppressWarnings("null")
     @Override
-    protected Message doGetToolResponseMessage(ResponseEntity<ChatResponse> chatCompletion) {
-        return chatCompletion.getBody().choices().iterator().next().message();
+    protected Message doGetToolResponseMessage(ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse> chatCompletion) {
+        return chatCompletion.getBody().getBody().choices().iterator().next().message();
     }
 
     @Override
-    protected ResponseEntity<ChatResponse> doChatCompletion(ChatRequest request) {
-        return this.zhipuAiApi.chatCompletionEntity(request);
+    protected ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse> doChatCompletion(ChatRequest request) {
+        return ResponseEntity.ok(this.qianfan.chatCompletion(request));
     }
 
     @Override
-    protected boolean isToolFunctionCall(ResponseEntity<ChatResponse> chatCompletion) {
+    protected boolean isToolFunctionCall(ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse> chatCompletion) {
         var body = chatCompletion.getBody();
         if (body == null) {
             return false;
         }
-        var choices = body.choices();
+        var choices = body.g();
         if (CollectionUtils.isEmpty(choices)) {
             return false;
         }

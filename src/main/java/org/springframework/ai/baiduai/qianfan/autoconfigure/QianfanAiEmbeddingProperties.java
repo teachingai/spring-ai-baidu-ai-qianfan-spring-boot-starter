@@ -1,7 +1,7 @@
-package org.springframework.ai.qianfan.autoconfigure;
+package org.springframework.ai.baiduai.qianfan.autoconfigure;
 
 import org.springframework.ai.document.MetadataMode;
-import org.springframework.ai.qianfan.QianfanAiEmbeddingOptions;
+import org.springframework.ai.baiduai.qianfan.BaiduAiQianfanEmbeddingOptions;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
@@ -25,15 +25,15 @@ public class QianfanAiEmbeddingProperties {
      * generative's defaults.
      */
     @NestedConfigurationProperty
-    private QianfanAiEmbeddingOptions options = QianfanAiEmbeddingOptions.builder()
+    private BaiduAiQianfanEmbeddingOptions options = BaiduAiQianfanEmbeddingOptions.builder()
             .withModel(DEFAULT_EMBEDDING_MODEL)
             .build();
 
-    public QianfanAiEmbeddingOptions getOptions() {
+    public BaiduAiQianfanEmbeddingOptions getOptions() {
         return this.options;
     }
 
-    public void setOptions(QianfanAiEmbeddingOptions options) {
+    public void setOptions(BaiduAiQianfanEmbeddingOptions options) {
         this.options = options;
     }
 

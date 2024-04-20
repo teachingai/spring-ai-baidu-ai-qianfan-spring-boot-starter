@@ -1,12 +1,12 @@
-package org.springframework.ai.qianfan.autoconfigure;
+package org.springframework.ai.baiduai.qianfan.autoconfigure;
 
 import com.baidubce.qianfan.Qianfan;
 import org.springframework.ai.autoconfigure.mistralai.MistralAiEmbeddingProperties;
 import org.springframework.ai.autoconfigure.retry.SpringAiRetryAutoConfiguration;
 import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.ai.model.function.FunctionCallbackContext;
-import org.springframework.ai.qianfan.QianfanAiChatClient;
-import org.springframework.ai.qianfan.QianfanAiEmbeddingClient;
+import org.springframework.ai.baiduai.qianfan.BaiduAiQianfanChatClient;
+import org.springframework.ai.baiduai.qianfan.BaiduAiQianfanEmbeddingClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -41,23 +41,22 @@ public class QianfanAiAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = QianfanAiChatProperties.CONFIG_PREFIX, name = "enabled", havingValue = "true", matchIfMissing = true)
-    public QianfanAiChatClient qianfanAiChatClient(Qianfan qianfan,
-                                                 QianfanAiChatProperties chatProperties,
-                                                 List<FunctionCallback> toolFunctionCallbacks,
-                                                 FunctionCallbackContext functionCallbackContext) {
+    @ConditionalOnProperty(prefix = QianfanAiChatProperties.CONFIG_PREFIX, name = "enabled", havingValue = "true")
+    public BaiduAiQianfanChatClient qianfanAiChatClient(Qianfan qianfan,
+                                                        QianfanAiChatProperties chatProperties,
+                                                        List<FunctionCallback> toolFunctionCallbacks,
+                                                        FunctionCallbackContext functionCallbackContext) {
         if (!CollectionUtils.isEmpty(toolFunctionCallbacks)) {
             chatProperties.getOptions().getFunctionCallbacks().addAll(toolFunctionCallbacks);
         }
-        return new QianfanAiChatClient(qianfan, chatProperties.getOptions(), functionCallbackContext);
+        return new BaiduAiQianfanChatClient(qianfan, chatProperties.getOptions(), functionCallbackContext);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = MistralAiEmbeddingProperties.CONFIG_PREFIX, name = "enabled", havingValue = "true", matchIfMissing = true)
-    public QianfanAiEmbeddingClient qianfanAiEmbeddingClient(Qianfan qianfan, QianfanAiEmbeddingProperties embeddingProperties) {
-
-        return new QianfanAiEmbeddingClient(qianfan, embeddingProperties.getMetadataMode(), embeddingProperties.getOptions());
+    @ConditionalOnProperty(prefix = MistralAiEmbeddingProperties.CONFIG_PREFIX, name = "enabled", havingValue = "true")
+    public BaiduAiQianfanEmbeddingClient qianfanAiEmbeddingClient(Qianfan qianfan, QianfanAiEmbeddingProperties embeddingProperties) {
+        return new BaiduAiQianfanEmbeddingClient(qianfan, embeddingProperties.getMetadataMode(), embeddingProperties.getOptions());
     }
 
     @Bean

@@ -1,39 +1,41 @@
 package org.springframework.ai.baiduai.qianfan.metadata;
 
-import com.huaweicloud.pangu.dev.sdk.client.pangu.PanguUsage;
+import com.baidubce.qianfan.model.chat.ChatUsage;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.util.Assert;
 
+import java.util.Optional;
+
 public class BaiduAiQianfanUsage implements Usage {
 
-    public static BaiduAiQianfanUsage from(PanguUsage usage) {
+    public static BaiduAiQianfanUsage from(ChatUsage usage) {
         return new BaiduAiQianfanUsage(usage);
     }
 
-    private final PanguUsage usage;
+    private final ChatUsage usage;
 
-    protected BaiduAiQianfanUsage(PanguUsage usage) {
-        Assert.notNull(usage, "Huawei AI PanguUsage must not be null");
+    protected BaiduAiQianfanUsage(ChatUsage usage) {
+        Assert.notNull(usage, "Baidu AI ChatUsage must not be null");
         this.usage = usage;
     }
 
-    protected PanguUsage getUsage() {
+    protected ChatUsage getUsage() {
         return this.usage;
     }
 
     @Override
     public Long getPromptTokens() {
-        return getUsage().getPromptTokens();
+        return Optional.ofNullable(getUsage().getPromptTokens()).map(Integer::longValue).orElse(-1L);
     }
 
     @Override
     public Long getGenerationTokens() {
-        return getUsage().getCompletionTokens();
+        return Optional.ofNullable(getUsage().getCompletionTokens()).map(Integer::longValue).orElse(-1L);
     }
 
     @Override
     public Long getTotalTokens() {
-        return getUsage().getTotalTokens();
+        return Optional.ofNullable(getUsage().getTotalTokens()).map(Integer::longValue).orElse(-1L);
     }
 
     @Override

@@ -7,12 +7,13 @@ import com.baidubce.qianfan.model.chat.FunctionCall;
 import com.baidubce.qianfan.model.chat.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.baiduai.qianfan.metadata.BaiduAiQianfanChatResponseMetadata;
+import org.springframework.ai.baiduai.qianfan.util.ApiUtils;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.StreamingChatClient;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
-import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.ModelOptionsUtils;
@@ -75,25 +76,12 @@ public class BaiduAiQianfanChatClient
             return new ChatResponse(List.of());
         }
 
-        new Generation(chatCompletion.getResult(), toMap(chatCompletion.getId(), chatCompletion))
-                .withGenerationMetadata(ChatGenerationMetadata.from(chatCompletion.getFinishReason(), null));
-
-        List<Generation> generations = chatCompletion.choices()
-                .stream()
-                .map(choice ->)
-                .toList();
-        ChatResponseMetadata metadata = ChatResponseMetadata.from(chatCompletion.getFinishReason(), null);
-        return new ChatResponse(generations);
+        List<Generation> generations = Arrays.asList(new Generation(chatCompletion.getResult(),
+                        ApiUtils.toMap(chatCompletion.getId(), chatCompletion))
+                        .withGenerationMetadata(ChatGenerationMetadata.from(chatCompletion.getFinishReason(), null)));
+        return new ChatResponse(generations, BaiduAiQianfanChatResponseMetadata.from(chatCompletion));
     }
 
-    private Map<String, Object> toMap(String id, com.baidubce.qianfan.model.chat.ChatResponse response) {
-        Map<String, Object> map = new HashMap<>();
-        if (response.getFinishReason() != null) {
-            map.put("finishReason", response.getFinishReason());
-        }
-        map.put("id", id);
-        return map;
-    }
 
     @Override
     public Flux<ChatResponse> stream(Prompt prompt) {
@@ -107,6 +95,39 @@ public class BaiduAiQianfanChatClient
         // For chunked responses, only the first chunk contains the choice role.
         // The rest of the chunks with same ID share the same role.
         ConcurrentHashMap<String, String> roleMap = new ConcurrentHashMap<>();
+
+        Iterator<com.baidubce.qianfan.model.chat.ChatResponse> chatCompletionsStream = this.qianfan.chatCompletionStream(request);
+
+        Flux.create(sink -> {
+
+            chatCompletionsStream.forEachRemaining(chatCompletion -> {
+                ChatResponse chatResponse = toChatCompletion(chatCompletion);
+                sink.next(chatResponse);
+            });
+
+        });
+        return Flux.fromIterable(() -> chatCompletionsStream)
+                .map(chatChunck -> {
+
+                    @SuppressWarnings("null")
+                    String id = chatChunck.getId();
+
+                    List<Generation> generations = chatChunck.getFinishReason().stream().map(choice -> {
+                        String finish = (choice.get() != null ? choice.finishReason().name() : "");
+                        var generation = new Generation(choice.message().content(),
+                                Map.of("id", id, "finishReason", finish));
+                        if (choice.finishReason() != null) {
+                            generation = generation
+                                    .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null));
+                        }
+                        return generation;
+                    }).toList();
+                    return new ChatResponse(generations);
+
+                    var content = (choice.getDelta() != null) ? choice.getDelta().getContent() : null;
+                    var generation = new Generation(content).withGenerationMetadata(generateChoiceMetadata(choice));
+                    return new ChatResponse(List.of(generation));
+                });
 
         return completionChunks.map(chunk -> toChatCompletion(chunk)).map(chatCompletion -> {
 
@@ -134,15 +155,10 @@ public class BaiduAiQianfanChatClient
     }
 
     private ChatResponse toChatCompletion(com.baidubce.qianfan.model.chat.ChatResponse response) {
-        List<com.baidubce.qianfan.model.chat.ChatResponse.Choice> choices = chunk.choices()
-                .stream()
-                .map(cc -> new ChatResponse.Choice(cc.index(), cc.delta(), cc.finishReason()))
-                .toList();
+        List<Generation> generations = Arrays.asList(new Generation(response.getResult(), ApiUtils.toMap(response.getId(), response))
+                        .withGenerationMetadata(ChatGenerationMetadata.from(response.getFinishReason(), null)));
 
-        new Generation(response.getResult(), toMap(response))
-                .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null)
-
-        return new ChatResponse(response.getSentenceId(), "chat.completion", response.getBanRound(), chunk.model(), choices, null);
+        return new ChatResponse(generations, BaiduAiQianfanChatResponseMetadata.from(response));
     }
 
     /**

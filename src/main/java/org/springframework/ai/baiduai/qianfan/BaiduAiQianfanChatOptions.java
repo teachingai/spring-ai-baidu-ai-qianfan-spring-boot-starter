@@ -31,30 +31,31 @@ public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOp
 
     /**
      * 采样温度，控制输出的随机性，必须为正数
-     * 取值范围是：(0.0, 1.0)，不能等于 0，默认值为 0.95，值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定
-     * 建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数
-     * 较高的数值会使输出更加随机，而较低的数值会使其更加集中和确定，范围 (0, 1.0]，不能为0
+     * （1）较高的数值会使输出更加随机，而较低的数值会使其更加集中和确定
+     * （2）默认0.8，范围 (0, 1.0]，不能为0
      */
     @JsonProperty("temperature")
     private Float temperature = DEFAULT_TEMPERATURE;
 
     /**
-     * 用温度取样的另一种方法，称为核取样取值范围是：(0.0, 1.0) 开区间，不能等于 0 或 1，默认值为 0.7
-     * 模型考虑具有 top_p 概率质量 tokens 的结果
-     * 例如：0.1 意味着模型解码器只考虑从前 10% 的概率的候选集中取 tokens
-     * 建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数
+     * 用温度取样的另一种方法，称为核取样取值范围是：(0.0, 1.0) 开区间，不能等于 0 或 1，默认值为 0.8
+     * （1）影响输出文本的多样性，取值越大，生成文本的多样性越强
+     * （2）默认0.8，取值范围 [0, 1.0]
      */
     @JsonProperty("top_p")
     private Float topP;
 
     /**
-     * 通过对已生成的token增加惩罚，减少重复生成的现象。说明：值越大表示惩罚越大，取值范围：[1.0, 2.0]
+     * 通过对已生成的token增加惩罚，减少重复生成的现象。说明：
+     * （1）值越大表示惩罚越大
+     * （2）默认1.0，取值范围：[1.0, 2.0]
      */
     @JsonProperty(value = "penaltyScore")
     private Float penaltyScore;
 
     /**
-     * 模型人设，主要用于人设设定
+     * 模型人设，主要用于人设设定，例如，你是xxx公司制作的AI助手，说明：
+     * （1）长度限制，message中的content总长度和system字段总内容不能超过20000个字符，且不能超过5120 tokens
      */
     @JsonProperty(value = "system")
     private String system;
@@ -62,37 +63,55 @@ public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOp
     /**
      * 终端用户的唯一ID，协助平台对终端用户的违规行为、生成违法及不良信息或其他滥用行为进行干预。ID长度要求：最少6个字符，最多128个字符。
      */
-    @JsonProperty(value = "user")
+    @JsonProperty(value = "user_id")
     private String user;
 
     /**
-     * 生成停止标识，当模型生成结果以stop中某个元素结尾时，停止文本生成
+     * 生成停止标识，当模型生成结果以stop中某个元素结尾时，停止文本生成。说明：
+     * （1）每个元素长度不超过20字符
+     * （2）最多4个元素
      */
     @JsonProperty("stop")
     private List<String> stop;
 
     /**
-     * 是否强制关闭实时搜索功能
+     * 是否强制关闭实时搜索功能，默认false，表示不关闭
      */
-    @JsonProperty(value = "user")
+    @JsonProperty(value = "disable_search")
     private Boolean disableSearch;
 
     /**
-     * 是否开启上角标返回
+     * 是否开启上角标返回，说明：
+     * （1）开启后，有概率触发搜索溯源信息search_info，search_info内容见响应参数介绍
+     * （2）默认false，不开启
      */
-    @JsonProperty(value = "user")
+    @JsonProperty(value = "enable_citation")
     private Boolean enableCitation;
 
     /**
-     * 指定模型最大输出token数
+     * 是否返回搜索溯源信息，说明：
+     * （1）如果开启，在触发了搜索增强的场景下，会返回搜索溯源信息search_info，search_info内容见响应参数介绍
+     * （2）默认false，表示不开启
      */
-    @JsonProperty("max_tokens")
+    @JsonProperty(value = "enable_trace")
+    private Boolean enableTrace;
+
+    /**
+     * 指定模型最大输出token数，说明：
+     * （1）如果设置此参数，范围[2, 2048]
+     * （2）如果不设置此参数，最大输出token数为2048
+     */
+    @JsonProperty("max_output_tokens")
     private Integer maxTokens;
 
     /**
-     * 指定响应内容的格式
+     * 指定响应内容的格式，说明：
+     * （1）可选值：
+     * · json_object：以json格式返回，可能出现不满足效果情况
+     * · text：以文本格式返回
+     * （2）如果不填写参数response_format值，默认为text
      */
-    @JsonProperty(value = "responseFormat")
+    @JsonProperty(value = "response_format")
     private String responseFormat;
 
     /**

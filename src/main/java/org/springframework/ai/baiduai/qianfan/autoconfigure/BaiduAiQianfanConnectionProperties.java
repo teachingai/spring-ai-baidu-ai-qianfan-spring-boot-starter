@@ -6,10 +6,10 @@ import com.baidubce.qianfan.model.RetryConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
-@ConfigurationProperties(QianfanAiConnectionProperties.CONFIG_PREFIX)
-public class QianfanAiConnectionProperties {
+@ConfigurationProperties(BaiduAiQianfanConnectionProperties.CONFIG_PREFIX)
+public class BaiduAiQianfanConnectionProperties {
 
-    public static final String CONFIG_PREFIX = "spring.ai.qianfan";
+    public static final String CONFIG_PREFIX = "spring.ai.baiduai.qianfan";
 
     private AuthType type = AuthType.IAM;
     private String accessKey;

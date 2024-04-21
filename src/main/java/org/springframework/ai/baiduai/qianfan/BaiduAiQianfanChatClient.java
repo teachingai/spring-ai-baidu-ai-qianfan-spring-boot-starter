@@ -5,6 +5,9 @@ import com.baidubce.qianfan.model.chat.ChatRequest;
 import com.baidubce.qianfan.model.chat.Function;
 import com.baidubce.qianfan.model.chat.FunctionCall;
 import com.baidubce.qianfan.model.chat.Message;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.baiduai.qianfan.metadata.BaiduAiQianfanChatResponseMetadata;
@@ -13,15 +16,18 @@ import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.StreamingChatClient;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.ai.model.function.AbstractFunctionCallSupport;
 import org.springframework.ai.model.function.FunctionCallbackContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
 import java.util.*;
@@ -31,6 +37,7 @@ public class BaiduAiQianfanChatClient
         extends AbstractFunctionCallSupport<Message, ChatRequest, ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse>>
         implements ChatClient, StreamingChatClient {
 
+    private final ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final Logger log = LoggerFactory.getLogger(getClass());
     /**
      * Default options to be used for all chat requests.
@@ -98,63 +105,37 @@ public class BaiduAiQianfanChatClient
 
         Iterator<com.baidubce.qianfan.model.chat.ChatResponse> chatCompletionsStream = this.qianfan.chatCompletionStream(request);
 
-        Flux.create(sink -> {
-
-            chatCompletionsStream.forEachRemaining(chatCompletion -> {
-                ChatResponse chatResponse = toChatCompletion(chatCompletion);
-                sink.next(chatResponse);
-            });
-
-        });
         return Flux.fromIterable(() -> chatCompletionsStream)
                 .map(chatChunck -> {
-
-                    @SuppressWarnings("null")
-                    String id = chatChunck.getId();
-
-                    List<Generation> generations = chatChunck.getFinishReason().stream().map(choice -> {
-                        String finish = (choice.get() != null ? choice.finishReason().name() : "");
-                        var generation = new Generation(choice.message().content(),
-                                Map.of("id", id, "finishReason", finish));
-                        if (choice.finishReason() != null) {
-                            generation = generation
-                                    .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null));
-                        }
-                        return generation;
-                    }).toList();
-                    return new ChatResponse(generations);
-
-                    var content = (choice.getDelta() != null) ? choice.getDelta().getContent() : null;
-                    var generation = new Generation(content).withGenerationMetadata(generateChoiceMetadata(choice));
-                    return new ChatResponse(List.of(generation));
+                    if (chatChunck == null) {
+                        log.warn("No chat completion returned for prompt: {}", prompt);
+                        return new ChatResponse(List.of());
+                    }
+                    return toChatCompletion(chatChunck);
                 });
-
-        return completionChunks.map(chunk -> toChatCompletion(chunk)).map(chatCompletion -> {
-
-            chatCompletion = handleFunctionCallOrReturn(request, ResponseEntity.of(Optional.of(chatCompletion)))
-                    .getBody();
-
-            @SuppressWarnings("null")
-            String id = chatCompletion.id();
-
-            List<Generation> generations = chatCompletion.choices().stream().map(choice -> {
-                if (choice.message().role() != null) {
-                    roleMap.putIfAbsent(id, choice.message().role().name());
-                }
-                String finish = (choice.finishReason() != null ? choice.finishReason().name() : "");
-                var generation = new Generation(choice.message().content(),
-                        Map.of("id", id, "role", roleMap.get(id), "finishReason", finish));
-                if (choice.finishReason() != null) {
-                    generation = generation
-                            .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null));
-                }
-                return generation;
-            }).toList();
-            return new ChatResponse(generations);
-        });
     }
 
     private ChatResponse toChatCompletion(com.baidubce.qianfan.model.chat.ChatResponse response) {
+
+
+        /*@SuppressWarnings("null")
+        String id = chatChunck.getId();
+
+        List<Generation> generations = chatChunck.getFinishReason().stream().map(choice -> {
+            String finish = (choice.get() != null ? choice.finishReason().name() : "");
+            var generation = new Generation(choice.message().content(),
+                    Map.of("id", id, "finishReason", finish));
+            if (choice.finishReason() != null) {
+                generation = generation
+                        .withGenerationMetadata(ChatGenerationMetadata.from(choice.finishReason().name(), null));
+            }
+            return generation;
+        }).toList();
+        return new ChatResponse(generations);
+
+        var content = (choice.getDelta() != null) ? choice.getDelta().getContent() : null;
+        var generation = new Generation(content).withGenerationMetadata(generateChoiceMetadata(choice));*/
+
         List<Generation> generations = Arrays.asList(new Generation(response.getResult(), ApiUtils.toMap(response.getId(), response))
                         .withGenerationMetadata(ChatGenerationMetadata.from(response.getFinishReason(), null)));
 
@@ -170,19 +151,16 @@ public class BaiduAiQianfanChatClient
 
         var chatCompletionMessages = prompt.getInstructions()
                 .stream()
-                .map(m -> new Message().setContent(m.getContent()).setRole(),
-                        Message.Role.valueOf(m.getMessageType().name())))
+                .map(m -> new Message().setContent(m.getContent()).setRole(ApiUtils.toRole(m)))
                 .toList();
 
-        qianfan.chatCompletion()
-
-        var request = new ChatRequest();
-        request.setStream(stream);
-        request.setMessages(chatCompletionMessages);
+        var request = new ChatRequest()
+                .setStream(stream)
+                .setMessages(chatCompletionMessages);
 
         if (this.defaultOptions != null) {
-            Set<String> defaultEnabledFunctions = this.handleFunctionCallbackConfigurations(this.defaultOptions,
-                    !IS_RUNTIME_CALL);
+
+            Set<String> defaultEnabledFunctions = this.handleFunctionCallbackConfigurations(this.defaultOptions, !IS_RUNTIME_CALL);
 
             functionsForThisRequest.addAll(defaultEnabledFunctions);
 
@@ -191,27 +169,24 @@ public class BaiduAiQianfanChatClient
 
         if (prompt.getOptions() != null) {
             if (prompt.getOptions() instanceof ChatOptions runtimeOptions) {
+
                 var updatedRuntimeOptions = ModelOptionsUtils.copyToTarget(runtimeOptions, ChatOptions.class,
                         BaiduAiQianfanChatOptions.class);
 
-                Set<String> promptEnabledFunctions = this.handleFunctionCallbackConfigurations(updatedRuntimeOptions,
-                        IS_RUNTIME_CALL);
+                Set<String> promptEnabledFunctions = this.handleFunctionCallbackConfigurations(updatedRuntimeOptions, IS_RUNTIME_CALL);
                 functionsForThisRequest.addAll(promptEnabledFunctions);
 
-                request = ModelOptionsUtils.merge(updatedRuntimeOptions, request,
-                        ChatRequest.class);
+                request = ModelOptionsUtils.merge(updatedRuntimeOptions, request, ChatRequest.class);
             }
             else {
-                throw new IllegalArgumentException("Prompt options are not of type ChatOptions: "
-                        + prompt.getOptions().getClass().getSimpleName());
+                throw new IllegalArgumentException("Prompt options are not of type ChatOptions: " + prompt.getOptions().getClass().getSimpleName());
             }
         }
 
         // Add the enabled functions definitions to the request's tools parameter.
         if (!CollectionUtils.isEmpty(functionsForThisRequest)) {
 
-            request = ModelOptionsUtils.merge(
-                    BaiduAiQianfanChatOptions.builder().withTools(this.getFunctionTools(functionsForThisRequest)).build(),
+            request = ModelOptionsUtils.merge( BaiduAiQianfanChatOptions.builder().withFunctions(this.getFunctionTools(functionsForThisRequest)).build(),
                     request, ChatRequest.class);
         }
 
@@ -219,27 +194,52 @@ public class BaiduAiQianfanChatClient
     }
 
     private List<Function> getFunctionTools(Set<String> functionNames) {
+        /**
+         * {
+         *     "name": "get_current_weather",
+         *     "description": "Get the current weather in a given location",
+         *     "parameters": {
+         *         "type": "object",
+         *         "properties": {
+         *             "location": {
+         *                 "type": "string",
+         *                 "description": "The city and state, e.g. San Francisco, CA",
+         *             },
+         *             "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+         *         },
+         *         "required": ["location"],
+         *     }
+         * }
+         */
         return this.resolveFunctionCallbacks(functionNames).stream().map(functionCallback -> {
-            var function = new FunctionCall(functionCallback.getDescription(),
-                    functionCallback.getName(), functionCallback.getInputTypeSchema());
-            return new Function(function);
+            var function = new Function().setName(functionCallback.getName())
+                    .setDescription(functionCallback.getDescription());
+                    //.setParameters(functionCallback.getParameters())
+                    //.setExamples(functionCallback.getExamples())
+            var inputTypeSchema =  functionCallback.getInputTypeSchema();
+            if(StringUtils.hasText(inputTypeSchema)){
+                JSONObject inputTypeSchemaJson = new JSONObject(inputTypeSchema);
+                function.setParameters(inputTypeSchemaJson);
+            }
+            return function;
         }).toList();
     }
 
     //
     // Function Calling Support
     //
+
     @Override
     protected ChatRequest doCreateToolResponseRequest(ChatRequest previousRequest,
                                                       Message responseMessage,
                                                       List<Message> conversationHistory) {
 
-        // Every tool-call item requires a separate function call and a response (TOOL)
-        // message.
-        for (Message.ToolCall toolCall : responseMessage.getFunctionCall()) {
+        // Every tool-call item requires a separate function call and a response (TOOL) message.
+        FunctionCall toolCall = responseMessage.getFunctionCall();
+        if (Objects.nonNull(toolCall)) {
 
-            var functionName = toolCall.function().name();
-            String functionArguments = toolCall.function().arguments();
+            var functionName = toolCall.getName();
+            String functionArguments = toolCall.getArguments();
 
             if (!this.functionCallbackRegister.containsKey(functionName)) {
                 throw new IllegalStateException("No function callback found for function name: " + functionName);
@@ -248,13 +248,13 @@ public class BaiduAiQianfanChatClient
             String functionResponse = this.functionCallbackRegister.get(functionName).call(functionArguments);
 
             // Add the function response to the conversation.
-            conversationHistory
-                    .add(new Message(functionResponse, Message.Role.TOOL, functionName, null));
+            conversationHistory.add(new Message().setName(functionName).setRole(MessageType.FUNCTION.getValue()).setContent(functionResponse));
+
         }
 
         // Recursively call chatCompletionWithTools until the model doesn't call a
         // functions anymore.
-        ChatRequest newRequest = new ChatRequest(previousRequest.requestId(), conversationHistory, false);
+        ChatRequest newRequest = new ChatRequest().setMessages(conversationHistory).setStream(false);
         newRequest = ModelOptionsUtils.merge(newRequest, previousRequest, ChatRequest.class);
 
         return newRequest;
@@ -268,25 +268,31 @@ public class BaiduAiQianfanChatClient
     @SuppressWarnings("null")
     @Override
     protected Message doGetToolResponseMessage(ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse> chatCompletion) {
-        return chatCompletion.getBody().getBody().choices().iterator().next().message();
+        var toolResponse = chatCompletion.getBody();
+        return new Message().setName(toolResponse.getId())
+                .setRole(MessageType.FUNCTION.getValue())
+                .setContent(toolResponse.getResult())
+                .setFunctionCall(toolResponse.getFunctionCall());
     }
 
     @Override
     protected ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse> doChatCompletion(ChatRequest request) {
-        return ResponseEntity.ok(this.qianfan.chatCompletion(request));
+        var chatResponse =  this.qianfan.chatCompletion(request);
+        if(Objects.nonNull(chatResponse.getNeedClearHistory()) && chatResponse.getNeedClearHistory()){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(chatResponse);
+        }
+        if(Objects.isNull(chatResponse.getFlag()) || 0 != chatResponse.getFlag()){
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(chatResponse);
+        }
+        return ResponseEntity.ok(chatResponse);
     }
 
     @Override
     protected boolean isToolFunctionCall(ResponseEntity<com.baidubce.qianfan.model.chat.ChatResponse> chatCompletion) {
-        var body = chatCompletion.getBody();
-        if (body == null) {
+        var toolResponse = chatCompletion.getBody();
+        if (Objects.isNull(toolResponse)) {
             return false;
         }
-        var choices = body.g();
-        if (CollectionUtils.isEmpty(choices)) {
-            return false;
-        }
-
-        return !CollectionUtils.isEmpty(choices.get(0).message().toolCalls());
+        return Objects.nonNull(toolResponse.getFunctionCall());
     }
 }

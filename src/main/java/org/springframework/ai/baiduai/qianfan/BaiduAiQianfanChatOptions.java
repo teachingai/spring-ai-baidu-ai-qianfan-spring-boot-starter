@@ -30,6 +30,14 @@ public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOp
     private String model;
 
     /**
+     * 指定模型最大输出token数，说明：
+     * （1）如果设置此参数，范围[2, 2048]
+     * （2）如果不设置此参数，最大输出token数为2048
+     */
+    @JsonProperty("max_output_tokens")
+    private Integer maxTokens;
+
+    /**
      * 采样温度，控制输出的随机性，必须为正数
      * （1）较高的数值会使输出更加随机，而较低的数值会使其更加集中和确定
      * （2）默认0.8，范围 (0, 1.0]，不能为0
@@ -96,13 +104,6 @@ public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOp
     @JsonProperty(value = "enable_trace")
     private Boolean enableTrace;
 
-    /**
-     * 指定模型最大输出token数，说明：
-     * （1）如果设置此参数，范围[2, 2048]
-     * （2）如果不设置此参数，最大输出token数为2048
-     */
-    @JsonProperty("max_output_tokens")
-    private Integer maxTokens;
 
     /**
      * 指定响应内容的格式，说明：
@@ -118,7 +119,7 @@ public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOp
      * 一个可触发函数的描述列表
      */
     @NestedConfigurationProperty
-    private @JsonProperty("tools") List<Function> tools;
+    private @JsonProperty("functions") List<Function> functions;
 
     /**
      * 在函数调用场景下，提示大模型选择指定的函数
@@ -174,13 +175,53 @@ public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOp
             return this;
         }
 
-        public Builder withTools(List<Function> tools) {
-            this.options.tools = tools;
+        public Builder withSystem(String system) {
+            this.options.system = system;
+            return this;
+        }
+
+        public Builder withPenaltyScore(Float penaltyScore) {
+            this.options.penaltyScore = penaltyScore;
+            return this;
+        }
+
+        public Builder withResponseFormat(String responseFormat) {
+            this.options.responseFormat = responseFormat;
+            return this;
+        }
+
+        public Builder withDisableSearch(Boolean disableSearch) {
+            this.options.disableSearch = disableSearch;
+            return this;
+        }
+
+        public Builder withEnableCitation(Boolean enableCitation) {
+            this.options.enableCitation = enableCitation;
+            return this;
+        }
+
+        public Builder withEnableTrace(Boolean enableTrace) {
+            this.options.enableTrace = enableTrace;
+            return this;
+        }
+
+        public Builder withStop(List<String> stop) {
+            this.options.stop = stop;
+            return this;
+        }
+
+        public Builder withUser(String user) {
+            this.options.setUser(user);
+            return this;
+        }
+
+        public Builder withFunctions(List<Function> functions) {
+            this.options.setFunctions(functions);
             return this;
         }
 
         public Builder withToolChoice(ToolChoice toolChoice) {
-            this.options.toolChoice = toolChoice;
+            this.options.setToolChoice(toolChoice);
             return this;
         }
 
@@ -249,6 +290,66 @@ public class BaiduAiQianfanChatOptions implements FunctionCallingOptions, ChatOp
 
     public String getModel() {
         return model;
+    }
+
+    public Float getPenaltyScore() {
+        return penaltyScore;
+    }
+
+    public void setPenaltyScore(Float penaltyScore) {
+        this.penaltyScore = penaltyScore;
+    }
+
+    public String getSystem() {
+        return system;
+    }
+
+    public void setSystem(String system) {
+        this.system = system;
+    }
+
+    public Boolean getDisableSearch() {
+        return disableSearch;
+    }
+
+    public void setDisableSearch(Boolean disableSearch) {
+        this.disableSearch = disableSearch;
+    }
+
+    public Boolean getEnableCitation() {
+        return enableCitation;
+    }
+
+    public void setEnableCitation(Boolean enableCitation) {
+        this.enableCitation = enableCitation;
+    }
+
+    public Boolean getEnableTrace() {
+        return enableTrace;
+    }
+
+    public void setEnableTrace(Boolean enableTrace) {
+        this.enableTrace = enableTrace;
+    }
+
+    public String getResponseFormat() {
+        return responseFormat;
+    }
+
+    public void setResponseFormat(String responseFormat) {
+        this.responseFormat = responseFormat;
+    }
+
+    public void setFunctions(List<Function> functions) {
+        this.functions = functions;
+    }
+
+    public ToolChoice getToolChoice() {
+        return toolChoice;
+    }
+
+    public void setToolChoice(ToolChoice toolChoice) {
+        this.toolChoice = toolChoice;
     }
 
     /**

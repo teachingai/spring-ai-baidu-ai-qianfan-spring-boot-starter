@@ -1,1 +1,1 @@
-qianfan.autoconfigure.QianfanAiAutoConfiguration
+org.springframework.ai.baiduai.qianfan.autoconfigure.BaiduAiQianfanAutoConfiguration

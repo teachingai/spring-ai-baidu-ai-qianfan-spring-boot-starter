@@ -12,9 +12,6 @@ public class BaiduAiQianfanRuntimeHints implements RuntimeHintsRegistrar {
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
         var mcs = MemberCategory.values();
-        for (var tr : findJsonAnnotatedClassesInPackage(QianfanAiApi.class)) {
-            hints.reflection().registerType(tr, mcs);
-        }
         for (var tr : findJsonAnnotatedClassesInPackage(BaiduAiQianfanChatOptions.class)) {
             hints.reflection().registerType(tr, mcs);
         }

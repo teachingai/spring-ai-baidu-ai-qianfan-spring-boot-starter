@@ -5,10 +5,10 @@ import org.springframework.ai.baiduai.qianfan.BaiduAiQianfanEmbeddingOptions;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
-@ConfigurationProperties(QianfanAiEmbeddingProperties.CONFIG_PREFIX)
-public class QianfanAiEmbeddingProperties {
+@ConfigurationProperties(BaiduAiQianfanEmbeddingProperties.CONFIG_PREFIX)
+public class BaiduAiQianfanEmbeddingProperties {
 
-    public static final String CONFIG_PREFIX = "spring.ai.qianfan.embedding";
+    public static final String CONFIG_PREFIX = "spring.ai.baiduai.qianfan.embedding";
 
     public static final String DEFAULT_EMBEDDING_MODEL = "embedding-v1";
 

@@ -24,13 +24,13 @@ import java.util.List;
  * {@link AutoConfiguration Auto-configuration} for 百度千帆 Chat Client.
  */
 @AutoConfiguration(after = { RestClientAutoConfiguration.class, SpringAiRetryAutoConfiguration.class })
-@EnableConfigurationProperties({ QianfanAiChatProperties.class, QianfanAiConnectionProperties.class, QianfanAiEmbeddingProperties.class })
+@EnableConfigurationProperties({ BaiduAiQianfanChatProperties.class, BaiduAiQianfanConnectionProperties.class, BaiduAiQianfanEmbeddingProperties.class })
 @ConditionalOnClass(Qianfan.class)
-public class QianfanAiAutoConfiguration {
+public class BaiduAiQianfanAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public Qianfan qianfan(QianfanAiConnectionProperties properties) {
+    public Qianfan qianfan(BaiduAiQianfanConnectionProperties properties) {
         Assert.isNull(properties.getType(), "Qianfan Type must be set");
         Assert.hasText(properties.getAccessKey(), "Qianfan API Access Key must be set");
         Assert.hasText(properties.getSecretKey(), "Qianfan API Secret Key must be set");
@@ -41,9 +41,9 @@ public class QianfanAiAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = QianfanAiChatProperties.CONFIG_PREFIX, name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = BaiduAiQianfanChatProperties.CONFIG_PREFIX, name = "enabled", havingValue = "true")
     public BaiduAiQianfanChatClient qianfanAiChatClient(Qianfan qianfan,
-                                                        QianfanAiChatProperties chatProperties,
+                                                        BaiduAiQianfanChatProperties chatProperties,
                                                         List<FunctionCallback> toolFunctionCallbacks,
                                                         FunctionCallbackContext functionCallbackContext) {
         if (!CollectionUtils.isEmpty(toolFunctionCallbacks)) {
@@ -55,7 +55,7 @@ public class QianfanAiAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = MistralAiEmbeddingProperties.CONFIG_PREFIX, name = "enabled", havingValue = "true")
-    public BaiduAiQianfanEmbeddingClient qianfanAiEmbeddingClient(Qianfan qianfan, QianfanAiEmbeddingProperties embeddingProperties) {
+    public BaiduAiQianfanEmbeddingClient qianfanAiEmbeddingClient(Qianfan qianfan, BaiduAiQianfanEmbeddingProperties embeddingProperties) {
         return new BaiduAiQianfanEmbeddingClient(qianfan, embeddingProperties.getMetadataMode(), embeddingProperties.getOptions());
     }
 

@@ -1,14 +1,8 @@
 package org.springframework.ai.baiduai.qianfan.util;
 
-import org.springframework.ai.baiduai.qianfan.metadata.BaiduAiQianfanChatResponseMetadata;
-import org.springframework.ai.chat.ChatResponse;
-import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ApiUtils {

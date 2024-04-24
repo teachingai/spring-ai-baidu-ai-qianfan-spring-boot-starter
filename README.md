@@ -8,10 +8,10 @@
 
 支持数据管理、自动化模型SFT以及推理服务云端部署的一站式大模型定制服务，助力各行业的生成式AI应用需求落地。
 
-- 官网地址：[https://techday.sensetime.com](https://techday.sensetime.com)
-- API文档：[https://platform.sensenova.cn/doc?path=/chat/GetStarted/APIList.md](https://platform.sensenova.cn/doc?path=/chat/GetStarted/APIList.md)
-- 模型更新: [https://platform.sensenova.cn/release?path=/release-202404.md](https://platform.sensenova.cn/release?path=/release-202404.md)
-- 体验中心: [https://platform.sensenova.cn/trialcenter](https://platform.sensenova.cn/trialcenter)
+- 官网地址：[https://cloud.baidu.com/product/wenxinworkshop](https://cloud.baidu.com/product/wenxinworkshop)
+- API文档：[https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Zlt2agedu](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Zlt2agedu)
+- 平台动态: [https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Dlfmc9dxj](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Dlfmc9dxj)
+- 体验中心: [https://yiyan.baidu.com/](https://yiyan.baidu.com/)
 
 #### 支持的功能包括：
 
@@ -20,8 +20,8 @@
 - 支持函数调用（Function Calling）：用户传入各类自定义工具，自动选择并调用工具，准确度达到99%
 - 支持文本嵌入（Embeddings）
 - 支持图片生成（Image Generation API）
-- 支持助手API（Assistants API）
-- 支持 code interpreter功能：自动生成Python代码解决数学问题，降低直接数值计算错误，提升数学解题能力。在公开数学测评数据集上逼近GPT-4 Turbo的水平
+- 支持模型调优（Fine-tuning API）
+- ...
 
 #### 资源
 

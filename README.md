@@ -1,6 +1,6 @@
 # spring-ai-baidu-ai-qianfan-spring-boot-starter
 
- > 基于 [百度千帆大模型平台](https://cloud.baidu.com/product/wenxinworkshop.html) 和 Spring AI 的 Spring Boot Starter 实现
+ > 基于 [百度智能云千帆大模型平台](https://cloud.baidu.com/product/wenxinworkshop.html) 和 Spring AI 的 Spring Boot Starter 实现
 
 ### 百度千帆大模型平台
 

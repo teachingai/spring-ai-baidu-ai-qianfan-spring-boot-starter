@@ -56,7 +56,7 @@
 
 ``` xml
 <dependency>
-	<groupId>com.github.hiwepy</groupId>
+	<groupId>com.github.teachingai</groupId>
 	<artifactId>spring-ai-baidu-ai-qianfan-spring-boot-starter</artifactId>
 	<version>${project.version}</version>
 </dependency>
